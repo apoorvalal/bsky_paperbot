@@ -1,0 +1,22 @@
+name: "GH Arxiv Posterbot"
+# on: workflow_dispatch
+on:
+  schedule:
+    - cron: "30 5,14 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install -r requirements.txt
+      - name: scrape and run
+        run: python3 paperbot.py
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKYBOT }}
+          BSKY_PASSWORD: ${{ secrets.BSKYPWD }}
+
