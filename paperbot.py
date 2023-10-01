@@ -168,6 +168,6 @@ def main():
     #     time.sleep(random.randint(0, 2))
 
 # %%
-if _name__ == "__main__":
+if __name__ == "__main__":
 
     main()
