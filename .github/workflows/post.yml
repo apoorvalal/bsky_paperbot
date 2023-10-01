@@ -17,6 +17,6 @@ jobs:
       - name: scrape and run
         run: python3 paperbot.py
         env:
-          BSKY_HANDLE: ${{ secrets.BSKYBOT }}
-          BSKY_PASSWORD: ${{ secrets.BSKYPWD }}
+          BSKYBOT: ${{ secrets.BSKYBOT }}
+          BSKYPWD: ${{ secrets.BSKYPWD }}
 
