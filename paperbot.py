@@ -155,12 +155,12 @@ def main():
     stat_entries = get_arxiv_feed("stat.ME")
     for entry in stat_entries:
         create_post(text=entry)
-        time.sleep(random.randint(10, 120))
+        time.sleep(random.randint(10, 240))
     # metrics
     em_entries = get_arxiv_feed("econ.EM")
     for entry in em_entries:
         create_post(text=entry)
-        time.sleep(random.randint(10, 120))
+        time.sleep(random.randint(30, 240))
     # ml - #toomuchcontent
     # ml_entries = get_arxiv_feed("stat.ML")
     # for entry in ml_entries:
