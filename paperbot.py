@@ -142,32 +142,66 @@ def get_arxiv_feed(subject: str):
     """
     feed_url = f"https://export.arxiv.org/rss/{subject}"
     feed = feedparser.parse(feed_url)
-    items = [
-        f"{entry.title.split('.')[0].strip()}\n{entry.link.strip()}\n{entry.description.replace('<p>', '').replace('</p>', '').strip()}"
+    # dict of all entries
+    res = {
+        entry.link.strip(): {
+            "title": entry.title.split(".")[0].strip(),
+            "link": entry.link.strip(),
+            "description": entry.description.replace("<p>", "")
+            .replace("</p>", "")
+            .strip()[:296]
+            .replace("\n", " ")
+            + "\n📈🤖",
+        }
         for entry in feed.entries
-    ]
-    return [item[:296].replace("\n", " ") + "\n📈🤖" for item in items]
+    }
+    return res
 
 
 # %%
 def main():
+    ######################################################################
     # stats
-    stat_entries = get_arxiv_feed("stat.ME")
-    for entry in stat_entries:
-        create_post(text=entry)
-        time.sleep(random.randint(10, 240))
-    # metrics
-    em_entries = get_arxiv_feed("econ.EM")
-    for entry in em_entries:
-        create_post(text=entry)
-        time.sleep(random.randint(30, 240))
-    # ml - #toomuchcontent
-    # ml_entries = get_arxiv_feed("stat.ML")
-    # for entry in ml_entries:
-    #     create_post(text=entry)
-    #     time.sleep(random.randint(0, 2))
+    ######################################################################
+    # read existing data from "stat_me_draws.json" file
+    try:
+        with open("stat_me_draws.json", "r") as f:
+            stat_me_archive = json.load(f)
+    except FileNotFoundError:
+        stat_me_archive = {}
+    # Get new data from arxiv feed
+    new_pull = get_arxiv_feed("stat.ME")
+    # Append new data to existing data
+    for k, v in new_pull.items():
+        if k not in stat_me_archive: # if not already posted
+            create_post(text=f"{v['title']}\n{v['link']}\n{v['description']}")
+            time.sleep(random.randint(300, 1200))
+            print(f"posted {k}")
+            stat_me_archive[k] = v
+    # Write updated data back to "stat_me_draws.json" file - once every run
+    with open("stat_me_draws.json", "w") as f:
+        json.dump(stat_me_archive, f)
+    ######################################################################
+    # econometrics
+    ######################################################################
+    try:
+        with open("econ_em_draws.json", "r") as f:
+            econ_em_archive = json.load(f)
+    except FileNotFoundError:
+        econ_em_archive = {}
+    # Get new data from arxiv feed
+    new_pull = get_arxiv_feed("stat.ME")
+    # Append new data to existing data
+    for k, v in new_pull.items():
+        if k not in econ_em_archive:
+            create_post(text=f"{v['title']}\n{v['link']}\n{v['description']}")
+            time.sleep(random.randint(300, 1200))
+            print(f"posted {k}")
+            econ_em_archive[k] = v
+    # Write updated data back to "econ_em_draws.json" file
+    with open("econ_em_draws.json", "w") as f:
+        json.dump(econ_em_archive, f)
 
 # %%
 if __name__ == "__main__":
-
     main()
