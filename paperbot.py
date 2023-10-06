@@ -150,8 +150,7 @@ def get_arxiv_feed(subject: str):
             "description": entry.description.replace("<p>", "")
             .replace("</p>", "")
             .strip()
-            .replace("\n", " ")
-            + "\n📈🤖",
+
         }
         for entry in feed.entries
     }
@@ -174,7 +173,7 @@ def main():
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
-            create_post(text=f"{v['title']}\n{v['link']}\n{v['description'][:300]}")
+            create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + '\n📈🤖')
             time.sleep(random.randint(300, 1200))
             print(f"posted {k}")
             stat_me_archive[k] = v
@@ -194,7 +193,7 @@ def main():
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in econ_em_archive:
-            create_post(text=f"{v['title']}\n{v['link']}\n{v['description'][:300]}")
+            create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + '\n📈🤖')
             time.sleep(random.randint(300, 1200))
             print(f"posted {k}")
             econ_em_archive[k] = v
@@ -206,3 +205,5 @@ def main():
 # %%
 if __name__ == "__main__":
     main()
+
+# %%
