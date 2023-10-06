@@ -149,8 +149,8 @@ def get_arxiv_feed(subject: str):
             "link": entry.link.strip(),
             "description": entry.description.replace("<p>", "")
             .replace("</p>", "")
-            .strip()[:296]
-            .replace("\n", " ")
+            .strip()
+            .replace("\n", " ")[:296]
             + "\n📈🤖",
         }
         for entry in feed.entries
@@ -173,7 +173,7 @@ def main():
     new_pull = get_arxiv_feed("stat.ME")
     # Append new data to existing data
     for k, v in new_pull.items():
-        if k not in stat_me_archive: # if not already posted
+        if k not in stat_me_archive:  # if not already posted
             create_post(text=f"{v['title']}\n{v['link']}\n{v['description']}")
             time.sleep(random.randint(300, 1200))
             print(f"posted {k}")
@@ -201,6 +201,7 @@ def main():
     # Write updated data back to "econ_em_draws.json" file
     with open("econ_em_draws.json", "w") as f:
         json.dump(econ_em_archive, f)
+
 
 # %%
 if __name__ == "__main__":
