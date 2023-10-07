@@ -130,7 +130,7 @@ def create_post(
     resp.raise_for_status()
 
 
-# %%
+
 def get_arxiv_feed(subject: str):
     """get skeetable list of paper title, link, and (fragment of) abstract
 
@@ -155,7 +155,6 @@ def get_arxiv_feed(subject: str):
         for entry in feed.entries
     }
     return res
-
 
 # %%
 def main():
@@ -189,7 +188,7 @@ def main():
     except FileNotFoundError:
         econ_em_archive = {}
     # Get new data from arxiv feed
-    new_pull = get_arxiv_feed("stat.ME")
+    new_pull = get_arxiv_feed("econ.EM")
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in econ_em_archive:
@@ -205,5 +204,6 @@ def main():
 # %%
 if __name__ == "__main__":
     main()
+
 
 # %%
