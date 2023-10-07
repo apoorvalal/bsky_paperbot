@@ -173,8 +173,7 @@ def main():
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
             create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + '\n📈🤖')
-            time.sleep(random.randint(300, 1200))
-            print(f"posted {k}")
+            time.sleep(random.randint(300, 600))
             stat_me_archive[k] = v
     # Write updated data back to "stat_me_draws.json" file - once every run
     with open("stat_me_draws.json", "w") as f:
@@ -193,8 +192,7 @@ def main():
     for k, v in new_pull.items():
         if k not in econ_em_archive:
             create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + '\n📈🤖')
-            time.sleep(random.randint(300, 1200))
-            print(f"posted {k}")
+            time.sleep(random.randint(300, 600))
             econ_em_archive[k] = v
     # Write updated data back to "econ_em_draws.json" file
     with open("econ_em_draws.json", "w") as f:
