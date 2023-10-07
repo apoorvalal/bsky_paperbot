@@ -172,7 +172,7 @@ def main():
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
             create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
-            time.sleep(random.randint(300, 600))
+            time.sleep(random.randint(300, 1200))
             stat_me_archive[k] = v
     # Write updated data back to "stat_me_draws.json" file - once every run
     with open("stat_me_draws.json", "w") as f:
@@ -192,7 +192,7 @@ def main():
     for k, v in new_pull.items():
         if k not in econ_em_archive:
             create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
-            time.sleep(random.randint(300, 600))
+            time.sleep(random.randint(300, 1200))
             econ_em_archive[k] = v
     # Write updated data back to "econ_em_draws.json" file
     with open("econ_em_draws.json", "w") as f:
@@ -205,4 +205,18 @@ if __name__ == "__main__":
     main()
 
 
+# %%
+# feed = feedparser.parse("https://export.arxiv.org/rss/stat.ME")
+# res = {
+#         entry.link.strip(): {
+#             "title": entry.title.split(".")[0].strip(),
+#             "link": entry.link.strip(),
+#             "description": "".join(entry.description.replace("<p>", "")
+#             .replace("</p>", "")
+#             .strip()),
+#     }
+#     for entry in feed.entries}
+# for k, v in res.items():
+#     print(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
+#     print("_____________________________")
 # %%
