@@ -179,6 +179,7 @@ def main():
     if new_posts == 0:
         random_paper = random.choice(list(stat_me_archive.values()))
         create_post(f"{random_paper['title']}\n{random_paper['link']}\n{random_paper['description']}"[:297] + "\n📈🤖")
+        time.sleep(random.randint(300, 1200))
     # Write updated data back to "stat_me_draws.json" file - once every run
     with open("stat_me_draws.json", "w") as f:
         json.dump(stat_me_archive, f)
@@ -214,19 +215,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-# %%
-# feed = feedparser.parse("https://export.arxiv.org/rss/stat.ME")
-# res = {
-#         entry.link.strip(): {
-#             "title": entry.title.split(".")[0].strip(),
-#             "link": entry.link.strip(),
-#             "description": "".join(entry.description.replace("<p>", "")
-#             .replace("</p>", "")
-#             .strip()),
-#     }
-#     for entry in feed.entries}
-# for k, v in res.items():
-#     print(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
-#     print("_____________________________")
 # %%
