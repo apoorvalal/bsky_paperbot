@@ -168,12 +168,17 @@ def main():
         stat_me_archive = {}
     # Get new data from arxiv feed
     new_pull = get_arxiv_feed("stat.ME")
+    new_posts = 0
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
             create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
             time.sleep(random.randint(300, 1200))
             stat_me_archive[k] = v
+            new_posts += 1
+    if new_posts == 0:
+        random_paper = random.choice(list(stat_me_archive.values()))
+        create_post(f"{random_paper['title']}\n{random_paper['link']}\n{random_paper['description']}"[:297] + "\n📈🤖")
     # Write updated data back to "stat_me_draws.json" file - once every run
     with open("stat_me_draws.json", "w") as f:
         json.dump(stat_me_archive, f)
@@ -188,12 +193,17 @@ def main():
         econ_em_archive = {}
     # Get new data from arxiv feed
     new_pull = get_arxiv_feed("econ.EM")
+    new_posts = 0
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in econ_em_archive:
             create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
             time.sleep(random.randint(300, 1200))
             econ_em_archive[k] = v
+            new_posts += 1
+    if new_posts == 0:
+        random_paper = random.choice(list(econ_em_archive.values()))
+        create_post(f"{random_paper['title']}\n{random_paper['link']}\n{random_paper['description']}"[:297] + "\n📈🤖")
     # Write updated data back to "econ_em_draws.json" file
     with open("econ_em_draws.json", "w") as f:
         json.dump(econ_em_archive, f)
