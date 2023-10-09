@@ -176,7 +176,7 @@ def main():
             time.sleep(random.randint(300, 1200))
             stat_me_archive[k] = v
             new_posts += 1
-    if new_posts == 0:
+    if new_posts == 0 & (len(stat_me_archive) > 2):
         print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(stat_me_archive.values()))
         create_post(f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[:297] + "\n📈🤖")
@@ -204,7 +204,7 @@ def main():
             time.sleep(random.randint(300, 1200))
             econ_em_archive[k] = v
             new_posts += 1
-    if new_posts == 0:
+    if new_posts == 0 & (len(econ_em_archive) > 2):
         print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(econ_em_archive.values()))
         create_post(f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[:297] + "\n📈🤖")
