@@ -172,8 +172,8 @@ def main():
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
-            # create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
-            # time.sleep(random.randint(300, 1200))
+            create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
+            time.sleep(random.randint(300, 1200))
             stat_me_archive[k] = v
             new_posts += 1
     if new_posts == 0:
@@ -198,8 +198,8 @@ def main():
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in econ_em_archive:
-            # create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
-            # time.sleep(random.randint(300, 1200))
+            create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
+            time.sleep(random.randint(300, 1200))
             econ_em_archive[k] = v
             new_posts += 1
     if new_posts == 0:
