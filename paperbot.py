@@ -183,8 +183,8 @@ def main():
         time.sleep(random.randint(300, 1200))
     else:
         # Write updated data back to "stat_me_draws.json" file - once every run
-        with open("stat_me_draws.json", "a+") as f:
-            json.dump(stat_me_archive, f)
+        with open("stat_me_draws.json", "w") as f:
+            json.dump(stat_me_archive, f, indent=None)
         print("wrote stat_me_draws.json")
     ######################################################################
     # econometrics
@@ -210,8 +210,8 @@ def main():
         create_post(f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[:297] + "\n📈🤖")
     else:
         # Write updated data back to "econ_em_draws.json" file
-        with open("econ_em_draws.json", "a+") as f:
-            json.dump(econ_em_archive, f)
+        with open("econ_em_draws.json", "w") as f:
+            json.dump(econ_em_archive, f, indent=None)
         print("wrote econ_em_draws.json")
 # %%
 if __name__ == "__main__":
