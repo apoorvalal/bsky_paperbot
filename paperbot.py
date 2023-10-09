@@ -172,18 +172,20 @@ def main():
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
-            create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
+            create_post(f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖")
             time.sleep(random.randint(300, 1200))
             stat_me_archive[k] = v
             new_posts += 1
     if new_posts == 0:
+        print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(stat_me_archive.values()))
-        create_post(f"{random_paper['title']}\n{random_paper['link']}\n{random_paper['description']}"[:297] + "\n📈🤖")
+        create_post(f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[:297] + "\n📈🤖")
         time.sleep(random.randint(300, 1200))
-    # Write updated data back to "stat_me_draws.json" file - once every run
-    with open("stat_me_draws.json", "a+") as f:
-        json.dump(stat_me_archive, f)
-    print("wrote stat_me_draws.json")
+    else:
+        # Write updated data back to "stat_me_draws.json" file - once every run
+        with open("stat_me_draws.json", "a+") as f:
+            json.dump(stat_me_archive, f)
+        print("wrote stat_me_draws.json")
     ######################################################################
     # econometrics
     ######################################################################
@@ -198,17 +200,19 @@ def main():
     # Append new data to existing data
     for k, v in new_pull.items():
         if k not in econ_em_archive:
-            create_post(f"{v['title']}\n{v['link']}\n{v['description']}"[:297] + "\n📈🤖")
+            create_post(f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖")
             time.sleep(random.randint(300, 1200))
             econ_em_archive[k] = v
             new_posts += 1
     if new_posts == 0:
+        print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(econ_em_archive.values()))
-        create_post(f"{random_paper['title']}\n{random_paper['link']}\n{random_paper['description']}"[:297] + "\n📈🤖")
-    # Write updated data back to "econ_em_draws.json" file
-    with open("econ_em_draws.json", "a+") as f:
-        json.dump(econ_em_archive, f)
-    print("wrote econ_em_draws.json")
+        create_post(f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[:297] + "\n📈🤖")
+    else:
+        # Write updated data back to "econ_em_draws.json" file
+        with open("econ_em_draws.json", "a+") as f:
+            json.dump(econ_em_archive, f)
+        print("wrote econ_em_draws.json")
 # %%
 if __name__ == "__main__":
     main()
