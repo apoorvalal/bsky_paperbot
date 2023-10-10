@@ -173,14 +173,14 @@ def main():
     for k, v in new_pull.items():
         if k not in stat_me_archive:  # if not already posted
             create_post(f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖")
-            time.sleep(random.randint(300, 1200))
+            time.sleep(random.randint(120, 600))
             stat_me_archive[k] = v
             new_posts += 1
     if new_posts == 0 & (len(stat_me_archive) > 2):
         print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(stat_me_archive.values()))
         create_post(f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[:297] + "\n📈🤖")
-        time.sleep(random.randint(300, 1200))
+        time.sleep(random.randint(120, 600))
     else:
         # Write updated data back to "stat_me_draws.json" file - once every run
         with open("stat_me_draws.json", "w") as f:
@@ -201,7 +201,7 @@ def main():
     for k, v in new_pull.items():
         if k not in econ_em_archive:
             create_post(f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖")
-            time.sleep(random.randint(300, 1200))
+            time.sleep(random.randint(120, 600))
             econ_em_archive[k] = v
             new_posts += 1
     if new_posts == 0 & (len(econ_em_archive) > 2):
