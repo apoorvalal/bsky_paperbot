@@ -2,20 +2,23 @@ name: "GH Arxiv Posterbot"
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 0,13,16,19,22 * * *"
+    - cron: "0 0,13,19 * * *"
 
 jobs:
-  post:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
           cache: 'pip' # caching pip dependencies
       - run: pip install -r requirements.txt
-      - name: scrape and run in post mode
+      - name: scrape and run
         run: python3 paperbot.py
         env:
           BSKYBOT: ${{ secrets.BSKYBOT }}
