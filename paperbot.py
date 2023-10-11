@@ -165,16 +165,19 @@ def get_and_write_feed_json(feedname: str, filename: str):
         if k not in archive:
             new_archive[k] = v
     # write out only if new items exist
-    if len(new_archive) > len(new_archive):
+    if len(new_archive) > len(archive):
         with open(filename, "w") as f:
             json.dump(new_archive, f, indent=None)
         print(f"{filename} updated")
     return feed, archive
 
+
 # %%
 def main():
     # query and write immediately
-    stats_pull, stat_me_archive = get_and_write_feed_json("stat.ME", "stat_me_draws.json")
+    stats_pull, stat_me_archive = get_and_write_feed_json(
+        "stat.ME", "stat_me_draws.json"
+    )
     em_pull, econ_em_archive = get_and_write_feed_json("econ.EM", "econ_em_draws.json")
     ######################################################################
     # stats
