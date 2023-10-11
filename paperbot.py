@@ -171,50 +171,20 @@ def get_and_write_feed_json(feedname: str, filename: str, write: bool = True):
         print(f"{filename} updated")
     return feed, archive
 
-
 # %%
-import argparse
-
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Post new articles from arxiv stat.ME and econ.EM."
-    )
-    parser.add_argument(
-        "mode", choices=["update", "post"], help="mode to run the script in"
-    )
-    args = parser.parse_args()
-    if args.mode == "update":
-        # query and write immediately
-        stats_pull, stat_me_archive = get_and_write_feed_json(
-            "stat.ME", "stat_me_draws.json", write=True
-        )
-        em_pull, econ_em_archive = get_and_write_feed_json(
-            "econ.EM", "econ_em_draws.json", write=True
-        )
-    elif args.mode == "post":
-        stats_pull, stat_me_archive = get_and_write_feed_json(
-            "stat.ME", "stat_me_draws.json", write=False
-        )
-        em_pull, econ_em_archive = get_and_write_feed_json(
-            "econ.EM", "econ_em_draws.json", write=False
-        )
-
-        # read existing data from "stat_me_draws.json" file
-        new_posts = 0
-        # Append new data to existing data
-        for k, v in stats_pull.items():
-            if k not in stat_me_archive:  # if not already posted
-                create_post(
-                    f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297]
-                    + "\n📈🤖"
-                )
-                time.sleep(random.randint(120, 600))
-                stat_me_archive[k] = v
-                new_posts += 1
-        if new_posts == 0 & (len(stat_me_archive) > 2):
-            print("No new papers found; posting random paper from archive")
-            random_paper = random.choice(list(stat_me_archive.values()))
+    # query and write immediately
+    stats_pull, stat_me_archive = get_and_write_feed_json("stat.ME", "stat_me_draws.json")
+    em_pull, econ_em_archive = get_and_write_feed_json("econ.EM", "econ_em_draws.json")
+    ######################################################################
+    # stats
+    ######################################################################
+    # read existing data from "stat_me_draws.json" file
+    new_posts = 0
+    # Append new data to existing data
+    for k, v in stats_pull.items():
+        if k not in stat_me_archive:  # if not already posted
             create_post(
                 f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[
                     :297
