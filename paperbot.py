@@ -187,21 +187,23 @@ def main():
     # Append new data to existing data
     for k, v in stats_pull.items():
         if k not in stat_me_archive:  # if not already posted
-            create_post(
+            post_str = (
                 f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖"
             )
+            create_post(post_str.replace("\n", " "))
             time.sleep(random.randint(60, 300))
             stat_me_archive[k] = v
             new_posts += 1
     if new_posts == 0 & (len(stat_me_archive) > 2):
         print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(stat_me_archive.values()))
-        create_post(
+        post_str = (
             f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[
                 :297
             ]
             + "\n📈🤖"
         )
+        create_post(post_str.replace("\n", " "))
         time.sleep(random.randint(30, 60))
     ######################################################################
     # econometrics
@@ -210,21 +212,23 @@ def main():
     # Append new data to existing data
     for k, v in em_pull.items():
         if k not in econ_em_archive:
-            create_post(
+            post_str = (
                 f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖"
             )
+            create_post(post_str.replace("\n", " "))
             time.sleep(random.randint(60, 300))
             econ_em_archive[k] = v
             new_posts += 1
     if new_posts == 0 & (len(econ_em_archive) > 2):
         print("No new papers found; posting random paper from archive")
         random_paper = random.choice(list(econ_em_archive.values()))
-        create_post(
+        post_str = (
             f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[
                 :297
             ]
             + "\n📈🤖"
         )
+        create_post(post_str.replace("\n", " "))
 
 
 # %%
