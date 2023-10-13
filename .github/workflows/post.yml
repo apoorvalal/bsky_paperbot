@@ -2,7 +2,7 @@ name: "GH Arxiv Posterbot"
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 0,13,19 * * *"
+    - cron: "0 1,13,15,17,19,21,23 * * *"
 
 jobs:
   build:
