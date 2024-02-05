@@ -130,16 +130,16 @@ def create_post(
     resp.raise_for_status()
 
 
-def get_arxiv_feed(subject: str):
+def get_arxiv_feed(subject: str = "econ.em+stat.me"):
     """get skeetable list of paper title, link, and (fragment of) abstract
 
     Args:
-        subject (str): valid arxiv subject, e.g. "stat.ME" or "econ.EM" or "cs.LG"
+        subject (str): valid arxiv subject, defaults to combined econ.EM and stat.ME
 
     Returns:
         list of skeets
     """
-    feed_url = f"https://export.arxiv.org/rss/{subject}"
+    feed_url = f"https://rss.arxiv.org/rss/{subject}"
     feed = feedparser.parse(feed_url)
     # dict of all entries
     res = {
@@ -155,7 +155,7 @@ def get_arxiv_feed(subject: str):
     return res
 
 
-def get_and_write_feed_json(feedname: str, filename: str):
+def get_and_write_feed_json(feedname="econ.em+stat.me", filename="combined.json"):
     feed = get_arxiv_feed(feedname)
     with open(filename, "r") as f:
         archive = json.load(f)
@@ -174,29 +174,25 @@ def get_and_write_feed_json(feedname: str, filename: str):
 
 # %%
 def main():
-    # query and write immediately
-    stats_pull, stat_me_archive = get_and_write_feed_json(
-        "stat.ME", "stat_me_draws.json"
-    )
-    em_pull, econ_em_archive = get_and_write_feed_json("econ.EM", "econ_em_draws.json")
+    pull, archive = get_and_write_feed_json()
     ######################################################################
     # stats
     ######################################################################
     # read existing data from "stat_me_draws.json" file
     new_posts = 0
     # Append new data to existing data
-    for k, v in stats_pull.items():
-        if k not in stat_me_archive:  # if not already posted
+    for k, v in pull.items():
+        if k not in archive:  # if not already posted
             post_str = (
                 f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖"
             )
             create_post(post_str.replace("\n", " "))
             time.sleep(random.randint(60, 300))
-            stat_me_archive[k] = v
+            archive[k] = v
             new_posts += 1
-    if new_posts == 0 & (len(stat_me_archive) > 2):
+    if new_posts == 0 & (len(archive) > 2):
         print("No new papers found; posting random paper from archive")
-        random_paper = random.choice(list(stat_me_archive.values()))
+        random_paper = random.choice(list(archive.values()))
         post_str = (
             f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[
                 :297
@@ -205,31 +201,6 @@ def main():
         )
         create_post(post_str.replace("\n", " "))
         time.sleep(random.randint(30, 60))
-    ######################################################################
-    # econometrics
-    ######################################################################
-    new_posts = 0
-    # Append new data to existing data
-    for k, v in em_pull.items():
-        if k not in econ_em_archive:
-            post_str = (
-                f"{v['title']}\n{v['link']}\n{''.join(v['description'])}"[:297] + "\n📈🤖"
-            )
-            create_post(post_str.replace("\n", " "))
-            time.sleep(random.randint(60, 300))
-            econ_em_archive[k] = v
-            new_posts += 1
-    if new_posts == 0 & (len(econ_em_archive) > 2):
-        print("No new papers found; posting random paper from archive")
-        random_paper = random.choice(list(econ_em_archive.values()))
-        post_str = (
-            f"{random_paper['title']}\n{random_paper['link']}\n{''.join(random_paper['description'])}"[
-                :297
-            ]
-            + "\n📈🤖"
-        )
-        create_post(post_str.replace("\n", " "))
-
 
 # %%
 if __name__ == "__main__":
