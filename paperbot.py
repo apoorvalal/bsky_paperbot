@@ -14,8 +14,8 @@ class ArxivBot:
     def create_post(self, title: str, link: str, description: str, authors: str):
         """Create a Bluesky post with paper details"""
         # Reserve characters for link and emoji
-        post_text = f"📈🤖\n{title} ({authors}) {description}"[:294]
-        post_builder = client_utils.TextBuilder().text(post_text).link("\nlink", link)
+        post_text = f" 📈🤖\n{title} ({authors}) {description}"[:293]
+        post_builder = client_utils.TextBuilder().link("link", link).text(post_text)
         self.client.send_post(post_builder)
 
     def get_arxiv_feed(self, subject: str = "econ.em+stat.me") -> Dict:
