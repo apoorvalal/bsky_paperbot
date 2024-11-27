@@ -1,8 +1,3 @@
-#!/home/alal/anaconda3/bin/python3
-
-"""
-Script to post new articles from arxiv stat.ME and econ.EM. Bring your own handle and app-password.
-"""
 import json
 import random
 import time
@@ -18,8 +13,9 @@ class ArxivBot:
 
     def create_post(self, title: str, link: str, description: str, authors: str):
         """Create a Bluesky post with paper details"""
-        post_text = f"{title} ({authors}) {description}"[:297] + "\n📈🤖"
-        post_builder = client_utils.TextBuilder().text(post_text).link(" link", link)
+        # Reserve characters for link and emoji
+        post_text = f"📈🤖\n{title} ({authors}) {description}"[:296]
+        post_builder = client_utils.TextBuilder().text(post_text).link("\nlink", link)
         self.client.send_post(post_builder)
 
     def get_arxiv_feed(self, subject: str = "econ.em+stat.me") -> Dict:
@@ -34,7 +30,9 @@ class ArxivBot:
                     if "Abstract:" in entry.description
                     else entry.description.strip()
                 ),
-                "authors": ", ".join(entry.author.split(", ")[:3])
+                "authors": ", ".join(
+                    [name.split()[-1] for name in entry.author.split(", ")][:3]
+                )
                 + (" et al" if len(entry.author.split(", ")) > 3 else ""),
             }
             for entry in feed.entries
@@ -67,14 +65,16 @@ class ArxivBot:
         # Post new papers
         for k, v in feed.items():
             if k not in archive:
-                self.create_post(v["title"], v["link"], v["description"])
+                self.create_post(v["title"], v["link"], v["description"], v["authors"])
                 time.sleep(random.randint(60, 300))
                 new_posts += 1
 
         # Post random paper if no new ones found
         if new_posts == 0 and len(archive) > 2:
             paper = random.choice(list(archive.values()))
-            self.create_post(paper["title"], paper["link"], paper["description"])
+            self.create_post(
+                paper["title"], paper["link"], paper["description"], paper["authors"]
+            )
             time.sleep(random.randint(30, 60))
 
 
