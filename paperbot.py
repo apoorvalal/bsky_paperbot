@@ -72,9 +72,12 @@ class ArxivBot:
         # Post random paper if no new ones found
         if new_posts == 0 and len(archive) > 2:
             paper = random.choice(list(archive.values()))
-            self.create_post(
-                paper["title"], paper["link"], paper["description"], paper["authors"]
-            )
+            # if paper contains key authors - back-compat
+            if "authors" in paper:
+                auth = paper["authors"]
+            else:
+                auth = ""
+            self.create_post(paper["title"], paper["link"], paper["description"], auth)
             time.sleep(random.randint(30, 60))
 
 
