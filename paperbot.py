@@ -1,92 +1,113 @@
-import json
-import random
-import time
-from typing import Dict
+#!/usr/bin/env python3
 import feedparser
 from atproto import Client, client_utils
-
+import os
+import re
+import grapheme
 
 class ArxivBot:
     def __init__(self, handle: str, password: str):
         self.client = Client()
         self.client.login(handle, password)
 
+    @staticmethod
+    def truncate_at_word_boundary(text: str, max_graphemes: int) -> str:
+        """
+        Truncate at nearest space within `max_graphemes` graphemes.
+        """
+        if grapheme.length(text) <= max_graphemes:
+            return text
+        seg = grapheme.slice(text, 0, max_graphemes)
+        idx = seg.rfind(' ')
+        return seg if idx == -1 else seg[:idx]
+
     def create_post(self, title: str, link: str, description: str, authors: str):
-        """Create a Bluesky post with paper details"""
-        # Reserve characters for link and emoji
-        post_text = f" 📈🤖\n{title} ({authors}) {description}"[:293]
-        post_builder = client_utils.TextBuilder().link("link", link).text(post_text)
-        self.client.send_post(post_builder)
+        """Build and send a Bluesky post: title. authors. description. then a 'link' facet."""
+        prefix = "📈🤖"
+        sep = "\n\n"
+        link_label = "link"
+        max_total = 300  # grapheme limit
 
-    def get_arxiv_feed(self, subject: str = "econ.em+stat.me") -> Dict:
-        """Fetch and parse arxiv RSS feed"""
-        feed = feedparser.parse(f"https://rss.arxiv.org/rss/{subject}")
-        return {
-            entry.link.strip(): {
-                "title": entry.title.strip(),
-                "link": entry.link.strip(),
-                "description": (
-                    entry.description.split("Abstract:", 1)[1].strip()
-                    if "Abstract:" in entry.description
-                    else entry.description.strip()
-                ),
-                "authors": ", ".join(
-                    [name.split()[-1] for name in entry.author.split(", ")][:3]
-                )
-                + (" et al" if len(entry.author.split(", ")) > 3 else ""),
-            }
-            for entry in feed.entries
-        }
+        # Format header: title with period
+        header = f"{prefix} {title}."
+        if authors:
+            header += f" {authors}."
 
-    def update_archive(self, feed: Dict, archive_file: str = "combined.json") -> tuple:
-        """Update archive with new entries"""
+        # Reserve space for separator and link facet
+        reserved = grapheme.length(sep) + grapheme.length(link_label)
+        content_limit = max_total - reserved
+
+        # Build body with optional description
+        if grapheme.length(header) >= content_limit:
+            body = self.truncate_at_word_boundary(header, content_limit)
+        else:
+            remaining = content_limit - grapheme.length(header) - 1
+            if remaining > 0 and description:
+                desc = self.truncate_at_word_boundary(description, remaining)
+                body = f"{header} {desc}" if desc else header
+            else:
+                body = header
+
+        # Safety check
+        if grapheme.length(body) > content_limit:
+            body = self.truncate_at_word_boundary(body, content_limit)
+
+        # Construct and send post
+        builder = (
+            client_utils.TextBuilder()
+            .text(body)
+            .text(sep)
+            .link(link_label, link)
+        )
         try:
-            with open(archive_file, "r") as f:
-                archive = json.load(f)
-        except FileNotFoundError:
-            archive = {}
+            self.client.send_post(builder)
+            print(f"Posted to Bluesky: {title}")
+        except Exception as e:
+            print(f"Failed to post '{title}': {e}")
 
-        new_archive = archive.copy()
-        for k, v in feed.items():
-            if k not in archive:
-                new_archive[k] = v
+    def get_arxiv_feed(self, subject: str = "econ.EM+stat.ME") -> dict:
+        """Parse RSS, extract title, link, description, authors."""
+        url = f"https://rss.arxiv.org/rss/{subject}"
+        feed = feedparser.parse(url)
+        results = {}
+        for entry in feed.entries:
+            title = entry.get('title', '').strip()
+            link = entry.get('link', '').strip()
 
-        if len(new_archive) > len(archive):
-            with open(archive_file, "w") as f:
-                json.dump(new_archive, f)
+            raw = entry.get('description', '')
+            m = re.search(r'Abstract:\s*(.*)', raw, re.DOTALL)
+            desc = m.group(1).strip() if m else (raw.split('\n',1)[1].strip() if '\n' in raw else raw.strip())
 
-        return feed, archive
+            # Extract authors via dc_creator or entry.author
+            creators = entry.get('dc_creator') or entry.get('author', '')
+            names = [n.strip() for n in creators.split(',') if n.strip()]
+            if names:
+                last_names = [n.split()[-1] for n in names]
+                if len(last_names) == 1:
+                    auth = last_names[0]
+                elif len(last_names) == 2:
+                    auth = f"{last_names[0]} and {last_names[1]}"
+                else:
+                    if len(last_names) > 3:
+                        auth = f"{last_names[0]}, {last_names[1]}, and {last_names[2]} et al."
+                    else:
+                        auth = f"{', '.join(last_names[:-1])}, and {last_names[-1]}"
+            else:
+                auth = ''
+
+            results[link] = {"title": title, "link": link, "description": desc, "authors": auth}
+        return results
 
     def run(self):
-        """Main bot loop"""
-        feed, archive = self.update_archive(self.get_arxiv_feed())
-        new_posts = 0
+        feed = self.get_arxiv_feed()
+        for link, paper in feed.items():
+            print(f"DEBUG AUTHORS for {paper['title']}: '{paper['authors']}'")
+            self.create_post(paper['title'], paper['link'], paper['description'], paper['authors'])
+        print(f"Run complete. Posted {len(feed)} papers.")
 
-        # Post new papers
-        for k, v in feed.items():
-            if k not in archive:
-                self.create_post(v["title"], v["link"], v["description"], v["authors"])
-                time.sleep(random.randint(60, 300))
-                new_posts += 1
-
-        # Post random paper if no new ones found
-        if new_posts == 0 and len(archive) > 2:
-            paper = random.choice(list(archive.values()))
-            # if paper contains key authors - back-compat
-            if "authors" in paper:
-                auth = paper["authors"]
-            else:
-                auth = ""
-            self.create_post(paper["title"], paper["link"], paper["description"], auth)
-            time.sleep(random.randint(30, 60))
-
-
-def main():
-    import os
-
-    bot = ArxivBot(os.environ["BSKYBOT"], os.environ["BSKYPWD"])
-    bot.run()
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    handle = os.getenv('BSKYBOT')
+    pwd = os.getenv('BSKYPWD')
+    if not handle or not pwd:
+        raise ValueError('BSKYBOT and BSKYPWD env vars must be set.')
+    ArxivBot(handle, pwd).run()
