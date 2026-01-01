@@ -16,15 +16,17 @@ class ArxivBot:
 
     def create_abstract_image(self, title: str, abstract: str, authors: str) -> bytes:
         """Generate a formatted PNG image of the paper abstract"""
-        # Image settings
-        width, height = 1200, 1600
-        bg_color = (245, 245, 245)
-        text_color = (30, 30, 30)
-        margin = 80
+        # Image settings - 5.5 inches at 150 DPI
+        dpi = 150
+        width = int(5.5 * dpi)  # 825 pixels
+        max_height = int(11 * dpi)  # Start with max letter height
+        bg_color = (255, 255, 255)  # White background
+        text_color = (0, 0, 0)  # Black text
+        margin = 60
 
-        # Create image
-        img = Image.new('RGB', (width, height), bg_color)
-        draw = ImageDraw.Draw(img)
+        # Create temporary large image
+        temp_img = Image.new('RGB', (width, max_height), bg_color)
+        draw = ImageDraw.Draw(temp_img)
 
         # Try to load fonts, fall back to default if not available
         title_font = None
@@ -41,10 +43,10 @@ class ArxivBot:
             ]
             for path in font_paths:
                 try:
-                    title_font = ImageFont.truetype(path, 32)
-                    author_font = ImageFont.truetype(path.replace("Bold", "Italic"), 20)
-                    header_font = ImageFont.truetype(path, 24)
-                    body_font = ImageFont.truetype(path.replace("Bold.ttf", ".ttf"), 20)
+                    title_font = ImageFont.truetype(path, 18)
+                    author_font = ImageFont.truetype(path.replace("Bold", "Italic"), 12)
+                    header_font = ImageFont.truetype(path, 14)
+                    body_font = ImageFont.truetype(path.replace("Bold.ttf", ".ttf"), 11)
                     break
                 except:
                     continue
@@ -60,39 +62,39 @@ class ArxivBot:
 
         y_position = margin
 
-        # Draw title
-        title_wrapped = textwrap.fill(title, width=50)
+        # Draw title (single-spaced)
+        title_wrapped = textwrap.fill(title, width=70)
         for line in title_wrapped.split('\n'):
             draw.text((margin, y_position), line, font=title_font, fill=text_color)
-            y_position += 40
+            y_position += 22
 
-        y_position += 20
+        y_position += 8
 
         # Draw authors
-        authors_wrapped = textwrap.fill(authors, width=60)
+        authors_wrapped = textwrap.fill(authors, width=80)
         for line in authors_wrapped.split('\n'):
             draw.text((margin, y_position), line, font=author_font, fill=text_color)
-            y_position += 30
+            y_position += 16
 
-        y_position += 40
+        y_position += 16
 
         # Draw "Abstract" header
         draw.text((margin, y_position), "Abstract", font=header_font, fill=text_color)
-        y_position += 50
+        y_position += 20
 
-        # Draw abstract text
-        abstract_wrapped = textwrap.fill(abstract, width=65)
+        # Draw abstract text (single-spaced)
+        abstract_wrapped = textwrap.fill(abstract, width=85)
         for line in abstract_wrapped.split('\n'):
-            if y_position > height - margin - 30:
-                # Add ellipsis if text is too long
-                draw.text((margin, y_position), "...", font=body_font, fill=text_color)
-                break
             draw.text((margin, y_position), line, font=body_font, fill=text_color)
-            y_position += 28
+            y_position += 14
+
+        # Crop to actual content with bottom margin
+        final_height = y_position + margin
+        img = temp_img.crop((0, 0, width, final_height))
 
         # Convert to bytes
         img_bytes = BytesIO()
-        img.save(img_bytes, format='PNG')
+        img.save(img_bytes, format='PNG', dpi=(dpi, dpi))
         img_bytes.seek(0)
         return img_bytes.read()
 
