@@ -22,7 +22,10 @@ class ArxivBot:
         max_height = int(11 * dpi)  # Start with max letter height
         bg_color = (255, 255, 255)  # White background
         text_color = (0, 0, 0)  # Black text
-        margin = 60
+        margin_left = 40
+        margin_right = 40
+        margin_top = 40
+        margin_bottom = 40
 
         # Create temporary large image
         temp_img = Image.new('RGB', (width, max_height), bg_color)
@@ -60,36 +63,61 @@ class ArxivBot:
             header_font = ImageFont.load_default()
             body_font = ImageFont.load_default()
 
-        y_position = margin
+        y_position = margin_top
+        text_width = width - margin_left - margin_right
 
-        # Draw title (single-spaced)
+        # Helper function to draw justified text
+        def draw_justified_text(text_line, y_pos, font, is_last_line=False):
+            if is_last_line or len(text_line.strip()) == 0:
+                # Don't justify the last line or empty lines
+                draw.text((margin_left, y_pos), text_line, font=font, fill=text_color)
+            else:
+                words = text_line.split()
+                if len(words) == 1:
+                    draw.text((margin_left, y_pos), text_line, font=font, fill=text_color)
+                else:
+                    # Calculate word widths
+                    word_widths = [draw.textlength(word, font=font) for word in words]
+                    total_word_width = sum(word_widths)
+                    total_space_width = text_width - total_word_width
+                    space_width = total_space_width / (len(words) - 1)
+
+                    # Draw words with calculated spacing
+                    x_pos = margin_left
+                    for i, word in enumerate(words):
+                        draw.text((x_pos, y_pos), word, font=font, fill=text_color)
+                        x_pos += word_widths[i] + space_width
+
+        # Draw title (single-spaced, left-aligned)
         title_wrapped = textwrap.fill(title, width=70)
         for line in title_wrapped.split('\n'):
-            draw.text((margin, y_position), line, font=title_font, fill=text_color)
+            draw.text((margin_left, y_position), line, font=title_font, fill=text_color)
             y_position += 22
 
         y_position += 8
 
-        # Draw authors
+        # Draw authors (left-aligned)
         authors_wrapped = textwrap.fill(authors, width=80)
         for line in authors_wrapped.split('\n'):
-            draw.text((margin, y_position), line, font=author_font, fill=text_color)
+            draw.text((margin_left, y_position), line, font=author_font, fill=text_color)
             y_position += 16
 
         y_position += 16
 
         # Draw "Abstract" header
-        draw.text((margin, y_position), "Abstract", font=header_font, fill=text_color)
+        draw.text((margin_left, y_position), "Abstract", font=header_font, fill=text_color)
         y_position += 20
 
-        # Draw abstract text (single-spaced)
+        # Draw abstract text (justified, single-spaced)
         abstract_wrapped = textwrap.fill(abstract, width=85)
-        for line in abstract_wrapped.split('\n'):
-            draw.text((margin, y_position), line, font=body_font, fill=text_color)
+        lines = abstract_wrapped.split('\n')
+        for i, line in enumerate(lines):
+            is_last = (i == len(lines) - 1)
+            draw_justified_text(line, y_position, body_font, is_last_line=is_last)
             y_position += 14
 
         # Crop to actual content with bottom margin
-        final_height = y_position + margin
+        final_height = y_position + margin_bottom
         img = temp_img.crop((0, 0, width, final_height))
 
         # Convert to bytes
