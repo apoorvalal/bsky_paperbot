@@ -2,8 +2,11 @@ import json
 import random
 import time
 from typing import Dict
+from io import BytesIO
+import textwrap
 import feedparser
 from atproto import Client, client_utils
+from PIL import Image, ImageDraw, ImageFont
 
 
 class ArxivBot:
@@ -11,12 +14,106 @@ class ArxivBot:
         self.client = Client()
         self.client.login(handle, password)
 
+    def create_abstract_image(self, title: str, abstract: str, authors: str) -> bytes:
+        """Generate a formatted PNG image of the paper abstract"""
+        # Image settings
+        width, height = 1200, 1600
+        bg_color = (245, 245, 245)
+        text_color = (30, 30, 30)
+        margin = 80
+
+        # Create image
+        img = Image.new('RGB', (width, height), bg_color)
+        draw = ImageDraw.Draw(img)
+
+        # Try to load fonts, fall back to default if not available
+        try:
+            # Try common font paths for different operating systems
+            font_paths = [
+                "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf",  # macOS
+                "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",  # Linux
+                "C:\\Windows\\Fonts\\timesbd.ttf",  # Windows
+            ]
+            title_font = None
+            for path in font_paths:
+                try:
+                    title_font = ImageFont.truetype(path, 32)
+                    author_font = ImageFont.truetype(path.replace("Bold", "Italic"), 20)
+                    header_font = ImageFont.truetype(path, 24)
+                    body_font = ImageFont.truetype(path.replace("Bold.ttf", ".ttf"), 20)
+                    break
+                except:
+                    continue
+            if title_font is None:
+                raise Exception("No fonts found")
+        except:
+            # Fallback to default font
+            title_font = ImageFont.load_default()
+            author_font = ImageFont.load_default()
+            header_font = ImageFont.load_default()
+            body_font = ImageFont.load_default()
+
+        y_position = margin
+
+        # Draw title
+        title_wrapped = textwrap.fill(title, width=50)
+        for line in title_wrapped.split('\n'):
+            draw.text((margin, y_position), line, font=title_font, fill=text_color)
+            y_position += 40
+
+        y_position += 20
+
+        # Draw authors
+        authors_wrapped = textwrap.fill(authors, width=60)
+        for line in authors_wrapped.split('\n'):
+            draw.text((margin, y_position), line, font=author_font, fill=text_color)
+            y_position += 30
+
+        y_position += 40
+
+        # Draw "Abstract" header
+        draw.text((margin, y_position), "Abstract", font=header_font, fill=text_color)
+        y_position += 50
+
+        # Draw abstract text
+        abstract_wrapped = textwrap.fill(abstract, width=65)
+        for line in abstract_wrapped.split('\n'):
+            if y_position > height - margin - 30:
+                # Add ellipsis if text is too long
+                draw.text((margin, y_position), "...", font=body_font, fill=text_color)
+                break
+            draw.text((margin, y_position), line, font=body_font, fill=text_color)
+            y_position += 28
+
+        # Convert to bytes
+        img_bytes = BytesIO()
+        img.save(img_bytes, format='PNG')
+        img_bytes.seek(0)
+        return img_bytes.read()
+
     def create_post(self, title: str, link: str, description: str, authors: str):
-        """Create a Bluesky post with paper details"""
-        # Reserve characters for link and emoji
-        post_text = f" 📈🤖\n{title} ({authors}) {description}"[:293]
-        post_builder = client_utils.TextBuilder().link("link", link).text(post_text)
-        self.client.send_post(post_builder)
+        """Create a Bluesky post with paper details and abstract image"""
+        # Shortened post text (abstract will be in image)
+        post_text = f"📈🤖 New Paper\n{title}\nBy {authors}\n"
+
+        # Generate abstract image
+        image_data = self.create_abstract_image(title, description, authors)
+
+        # Upload image with abstract as alt text
+        upload = self.client.upload_blob(image_data)
+
+        # Create embed with image
+        embed = {
+            "$type": "app.bsky.embed.images",
+            "images": [{
+                "alt": description,  # Full abstract as alt text for accessibility
+                "image": upload.blob
+            }]
+        }
+
+        # Create and send post with image
+        post_builder = client_utils.TextBuilder().link("arXiv", link).text(post_text)
+        self.client.send_post(post_builder, embed=embed)
 
     def get_arxiv_feed(self, subject: str = "econ.em+stat.me") -> Dict:
         """Fetch and parse arxiv RSS feed"""
