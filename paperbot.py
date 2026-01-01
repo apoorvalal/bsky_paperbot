@@ -7,6 +7,11 @@ import textwrap
 import feedparser
 from atproto import Client, client_utils
 from PIL import Image, ImageDraw, ImageFont
+import shutil
+import subprocess
+import hashlib
+import tempfile
+import os
 
 
 class ArxivBot:
@@ -14,8 +19,76 @@ class ArxivBot:
         self.client = Client()
         self.client.login(handle, password)
 
+    def _render_with_typst(self, title: str, abstract: str, authors: str) -> bytes:
+        """Render abstract image using Typst. Returns PNG bytes or raises exception."""
+        # Read template
+        template_path = os.path.join(os.path.dirname(__file__), 'abstract_template.typ')
+        with open(template_path, 'r') as f:
+            template = f.read()
+
+        # Escape special Typst characters in user data
+        def escape_typst(text: str) -> str:
+            # Escape backslashes first, then special chars
+            text = text.replace('\\', '\\\\')
+            text = text.replace('#', '\\#')
+            text = text.replace('[', '\\[')
+            text = text.replace(']', '\\]')
+            text = text.replace('{', '\\{')
+            text = text.replace('}', '\\}')
+            return text
+
+        # Populate template
+        content = template.replace('{{TITLE}}', escape_typst(title))
+        content = content.replace('{{AUTHORS}}', escape_typst(authors))
+        content = content.replace('{{ABSTRACT}}', escape_typst(abstract))
+
+        # Create temp files with unique names
+        content_hash = hashlib.md5(content.encode()).hexdigest()[:8]
+        temp_dir = tempfile.gettempdir()
+        typ_path = os.path.join(temp_dir, f'abstract_{content_hash}.typ')
+        png_path = os.path.join(temp_dir, f'abstract_{content_hash}.png')
+
+        try:
+            # Write populated template
+            with open(typ_path, 'w') as f:
+                f.write(content)
+
+            # Compile with Typst
+            result = subprocess.run(
+                ['typst', 'compile', typ_path, png_path, '--format', 'png'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode != 0:
+                raise Exception(f"Typst compilation failed: {result.stderr}")
+
+            # Read PNG bytes
+            with open(png_path, 'rb') as f:
+                return f.read()
+
+        finally:
+            # Cleanup temp files
+            for path in [typ_path, png_path]:
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except:
+                        pass  # Ignore cleanup errors
+
     def create_abstract_image(self, title: str, abstract: str, authors: str) -> bytes:
         """Generate a formatted PNG image of the paper abstract"""
+
+        # Try Typst first if available
+        if shutil.which('typst'):
+            try:
+                return self._render_with_typst(title, abstract, authors)
+            except Exception as e:
+                # Log warning and fall back to PIL
+                print(f"Warning: Typst rendering failed ({e}), falling back to PIL")
+
+        # PIL fallback (existing implementation below)
         # Image settings - 4 inches at 150 DPI
         dpi = 150
         width = int(4 * dpi)  # 600 pixels
