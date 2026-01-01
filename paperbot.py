@@ -27,6 +27,11 @@ class ArxivBot:
         draw = ImageDraw.Draw(img)
 
         # Try to load fonts, fall back to default if not available
+        title_font = None
+        author_font = None
+        header_font = None
+        body_font = None
+
         try:
             # Try common font paths for different operating systems
             font_paths = [
@@ -34,7 +39,6 @@ class ArxivBot:
                 "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",  # Linux
                 "C:\\Windows\\Fonts\\timesbd.ttf",  # Windows
             ]
-            title_font = None
             for path in font_paths:
                 try:
                     title_font = ImageFont.truetype(path, 32)
@@ -44,10 +48,11 @@ class ArxivBot:
                     break
                 except:
                     continue
-            if title_font is None:
-                raise Exception("No fonts found")
         except:
-            # Fallback to default font
+            pass
+
+        # Fallback to default font if none found
+        if title_font is None:
             title_font = ImageFont.load_default()
             author_font = ImageFont.load_default()
             header_font = ImageFont.load_default()
