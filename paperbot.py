@@ -2,11 +2,8 @@ import json
 import random
 import time
 from typing import Dict
-from io import BytesIO
-import textwrap
 import feedparser
 from atproto import Client, client_utils
-from PIL import Image, ImageDraw, ImageFont
 import shutil
 import subprocess
 import hashlib
@@ -78,126 +75,8 @@ class ArxivBot:
                         pass  # Ignore cleanup errors
 
     def create_abstract_image(self, title: str, abstract: str, authors: str) -> bytes:
-        """Generate a formatted PNG image of the paper abstract"""
-
-        # Try Typst first if available
-        if shutil.which('typst'):
-            try:
-                return self._render_with_typst(title, abstract, authors)
-            except Exception as e:
-                # Log warning and fall back to PIL
-                print(f"Warning: Typst rendering failed ({e}), falling back to PIL")
-
-        # PIL fallback (existing implementation below)
-        # Image settings - 4 inches at 150 DPI
-        dpi = 150
-        width = int(4 * dpi)  # 600 pixels
-        max_height = int(11 * dpi)  # Start with max letter height
-        bg_color = (255, 255, 255)  # White background
-        text_color = (0, 0, 0)  # Black text
-        margin_left = 40
-        margin_right = 40
-        margin_top = 40
-        margin_bottom = 40
-
-        # Create temporary large image
-        temp_img = Image.new('RGB', (width, max_height), bg_color)
-        draw = ImageDraw.Draw(temp_img)
-
-        # Try to load fonts, fall back to default if not available
-        title_font = None
-        author_font = None
-        header_font = None
-        body_font = None
-
-        try:
-            # Try common font paths for different operating systems
-            font_paths = [
-                "/System/Library/Fonts/Supplemental/Times New Roman Bold.ttf",  # macOS
-                "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",  # Linux
-                "C:\\Windows\\Fonts\\timesbd.ttf",  # Windows
-            ]
-            for path in font_paths:
-                try:
-                    title_font = ImageFont.truetype(path, 18)
-                    author_font = ImageFont.truetype(path.replace("Bold", "Italic"), 12)
-                    header_font = ImageFont.truetype(path, 14)
-                    body_font = ImageFont.truetype(path.replace("Bold.ttf", ".ttf"), 11)
-                    break
-                except:
-                    continue
-        except:
-            pass
-
-        # Fallback to default font if none found
-        if title_font is None:
-            title_font = ImageFont.load_default()
-            author_font = ImageFont.load_default()
-            header_font = ImageFont.load_default()
-            body_font = ImageFont.load_default()
-
-        y_position = margin_top
-        text_width = width - margin_left - margin_right
-
-        # Helper function to draw justified text
-        def draw_justified_text(text_line, y_pos, font, is_last_line=False):
-            if is_last_line or len(text_line.strip()) == 0:
-                # Don't justify the last line or empty lines
-                draw.text((margin_left, y_pos), text_line, font=font, fill=text_color)
-            else:
-                words = text_line.split()
-                if len(words) == 1:
-                    draw.text((margin_left, y_pos), text_line, font=font, fill=text_color)
-                else:
-                    # Calculate word widths
-                    word_widths = [draw.textlength(word, font=font) for word in words]
-                    total_word_width = sum(word_widths)
-                    total_space_width = text_width - total_word_width
-                    space_width = total_space_width / (len(words) - 1)
-
-                    # Draw words with calculated spacing
-                    x_pos = margin_left
-                    for i, word in enumerate(words):
-                        draw.text((x_pos, y_pos), word, font=font, fill=text_color)
-                        x_pos += word_widths[i] + space_width
-
-        # Draw title (single-spaced, left-aligned)
-        title_wrapped = textwrap.fill(title, width=70)
-        for line in title_wrapped.split('\n'):
-            draw.text((margin_left, y_position), line, font=title_font, fill=text_color)
-            y_position += 22
-
-        y_position += 8
-
-        # Draw authors (left-aligned)
-        authors_wrapped = textwrap.fill(authors, width=80)
-        for line in authors_wrapped.split('\n'):
-            draw.text((margin_left, y_position), line, font=author_font, fill=text_color)
-            y_position += 16
-
-        y_position += 16
-
-        # Draw "Abstract" header
-        draw.text((margin_left, y_position), "Abstract", font=header_font, fill=text_color)
-        y_position += 20
-
-        # Draw abstract text (justified, single-spaced)
-        abstract_wrapped = textwrap.fill(abstract, width=85)
-        lines = abstract_wrapped.split('\n')
-        for i, line in enumerate(lines):
-            is_last = (i == len(lines) - 1)
-            draw_justified_text(line, y_position, body_font, is_last_line=is_last)
-            y_position += 14
-
-        # Crop to actual content with bottom margin
-        final_height = y_position + margin_bottom
-        img = temp_img.crop((0, 0, width, final_height))
-
-        # Convert to bytes
-        img_bytes = BytesIO()
-        img.save(img_bytes, format='PNG', dpi=(dpi, dpi))
-        img_bytes.seek(0)
-        return img_bytes.read()
+        """Generate a formatted PNG image of the paper abstract using Typst"""
+        return self._render_with_typst(title, abstract, authors)
 
     def create_post(self, title: str, link: str, description: str, authors: str):
         """Create a Bluesky post with paper details and abstract image"""
