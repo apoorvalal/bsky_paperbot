@@ -1,7 +1,7 @@
 // Abstract image template for Bluesky bot
-// Page setup - 4 inches wide, auto height
+// Page setup - 5.5 inches wide, auto height
 #set page(
-  width: 4in,
+  width: 5.5in,
   height: auto,
   margin: (x: 0.27in, y: 0.27in),
 )
