@@ -16,9 +16,9 @@ class ArxivBot:
 
     def create_abstract_image(self, title: str, abstract: str, authors: str) -> bytes:
         """Generate a formatted PNG image of the paper abstract"""
-        # Image settings - 5.5 inches at 150 DPI
+        # Image settings - 4 inches at 150 DPI
         dpi = 150
-        width = int(5.5 * dpi)  # 825 pixels
+        width = int(4 * dpi)  # 600 pixels
         max_height = int(11 * dpi)  # Start with max letter height
         bg_color = (255, 255, 255)  # White background
         text_color = (0, 0, 0)  # Black text
