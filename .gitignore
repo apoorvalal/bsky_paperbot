@@ -28,3 +28,4 @@ __pycache__/*
 *.blg
 *.out
 *.synctex.gz
+.worktrees/

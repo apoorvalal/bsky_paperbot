@@ -4,6 +4,11 @@ import time
 from typing import Dict
 import feedparser
 from atproto import Client, client_utils
+import shutil
+import subprocess
+import hashlib
+import tempfile
+import os
 
 
 class ArxivBot:
@@ -11,12 +16,91 @@ class ArxivBot:
         self.client = Client()
         self.client.login(handle, password)
 
+    def _render_with_typst(self, title: str, abstract: str, authors: str) -> bytes:
+        """Render abstract image using Typst. Returns PNG bytes or raises exception."""
+        # Read template
+        template_path = os.path.join(os.path.dirname(__file__), 'abstract_template.typ')
+        with open(template_path, 'r') as f:
+            template = f.read()
+
+        # Escape special Typst characters in user data
+        def escape_typst(text: str) -> str:
+            # Escape backslashes first, then special chars
+            text = text.replace('\\', '\\\\')
+            text = text.replace('#', '\\#')
+            text = text.replace('[', '\\[')
+            text = text.replace(']', '\\]')
+            text = text.replace('{', '\\{')
+            text = text.replace('}', '\\}')
+            return text
+
+        # Populate template
+        content = template.replace('{{TITLE}}', escape_typst(title))
+        content = content.replace('{{AUTHORS}}', escape_typst(authors))
+        content = content.replace('{{ABSTRACT}}', escape_typst(abstract))
+
+        # Create temp files with unique names
+        content_hash = hashlib.md5(content.encode()).hexdigest()[:8]
+        temp_dir = tempfile.gettempdir()
+        typ_path = os.path.join(temp_dir, f'abstract_{content_hash}.typ')
+        png_path = os.path.join(temp_dir, f'abstract_{content_hash}.png')
+
+        try:
+            # Write populated template
+            with open(typ_path, 'w') as f:
+                f.write(content)
+
+            # Compile with Typst
+            result = subprocess.run(
+                ['typst', 'compile', typ_path, png_path, '--format', 'png'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode != 0:
+                raise Exception(f"Typst compilation failed: {result.stderr}")
+
+            # Read PNG bytes
+            with open(png_path, 'rb') as f:
+                return f.read()
+
+        finally:
+            # Cleanup temp files
+            for path in [typ_path, png_path]:
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except:
+                        pass  # Ignore cleanup errors
+
+    def create_abstract_image(self, title: str, abstract: str, authors: str) -> bytes:
+        """Generate a formatted PNG image of the paper abstract using Typst"""
+        return self._render_with_typst(title, abstract, authors)
+
     def create_post(self, title: str, link: str, description: str, authors: str):
-        """Create a Bluesky post with paper details"""
-        # Reserve characters for link and emoji
-        post_text = f" 📈🤖\n{title} ({authors}) {description}"[:293]
-        post_builder = client_utils.TextBuilder().link("link", link).text(post_text)
-        self.client.send_post(post_builder)
+        """Create a Bluesky post with paper details and abstract image"""
+        # Shortened post text (abstract will be in image)
+        post_text = f"📈🤖 New Paper\n{title}\nBy {authors}\n"
+
+        # Generate abstract image
+        image_data = self.create_abstract_image(title, description, authors)
+
+        # Upload image with abstract as alt text
+        upload = self.client.upload_blob(image_data)
+
+        # Create embed with image
+        embed = {
+            "$type": "app.bsky.embed.images",
+            "images": [{
+                "alt": description,  # Full abstract as alt text for accessibility
+                "image": upload.blob
+            }]
+        }
+
+        # Create and send post with image
+        post_builder = client_utils.TextBuilder().link("arXiv", link).text(post_text)
+        self.client.send_post(post_builder, embed=embed)
 
     def get_arxiv_feed(self, subject: str = "econ.em+stat.me") -> Dict:
         """Fetch and parse arxiv RSS feed"""
