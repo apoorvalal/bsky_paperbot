@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import time
 from typing import Dict
 import feedparser
@@ -19,50 +20,70 @@ class ArxivBot:
     def _render_with_typst(self, title: str, abstract: str, authors: str) -> bytes:
         """Render abstract image using Typst. Returns PNG bytes or raises exception."""
         # Read template
-        template_path = os.path.join(os.path.dirname(__file__), 'abstract_template.typ')
-        with open(template_path, 'r') as f:
+        template_path = os.path.join(os.path.dirname(__file__), "abstract_template.typ")
+        with open(template_path, "r") as f:
             template = f.read()
 
         # Escape special Typst characters in user data
         def escape_typst(text: str) -> str:
             # Escape backslashes first, then special chars
-            text = text.replace('\\', '\\\\')
-            text = text.replace('#', '\\#')
-            text = text.replace('[', '\\[')
-            text = text.replace(']', '\\]')
-            text = text.replace('{', '\\{')
-            text = text.replace('}', '\\}')
+            text = text.replace("\\", "\\\\")
+            text = text.replace("$", "\\$")
+            text = text.replace("#", "\\#")
+            text = text.replace("[", "\\[")
+            text = text.replace("]", "\\]")
+            text = text.replace("{", "\\{")
+            text = text.replace("}", "\\}")
             return text
 
+        latex_pattern = re.compile(
+            r"(\$\$.*?\$\$|(?<!\\)\$(?:[^$\\]|\\.)+?(?<!\\)\$|\\\[.*?\\\]|\\\(.*?\\\)|\\begin\{.*?\}.*?\\end\{.*?\})",
+            re.DOTALL,
+        )
+
+        def format_typst(text: str) -> str:
+            # Wrap LaTeX-like segments in backticks to avoid Typst parsing.
+            parts = []
+            last_end = 0
+            for match in latex_pattern.finditer(text):
+                if match.start() > last_end:
+                    parts.append(escape_typst(text[last_end : match.start()]))
+                latex = match.group(0).replace("`", "``")
+                parts.append(f"`{latex}`")
+                last_end = match.end()
+            if last_end < len(text):
+                parts.append(escape_typst(text[last_end:]))
+            return "".join(parts)
+
         # Populate template
-        content = template.replace('{{TITLE}}', escape_typst(title))
-        content = content.replace('{{AUTHORS}}', escape_typst(authors))
-        content = content.replace('{{ABSTRACT}}', escape_typst(abstract))
+        content = template.replace("{{TITLE}}", format_typst(title))
+        content = content.replace("{{AUTHORS}}", format_typst(authors))
+        content = content.replace("{{ABSTRACT}}", format_typst(abstract))
 
         # Create temp files with unique names
         content_hash = hashlib.md5(content.encode()).hexdigest()[:8]
         temp_dir = tempfile.gettempdir()
-        typ_path = os.path.join(temp_dir, f'abstract_{content_hash}.typ')
-        png_path = os.path.join(temp_dir, f'abstract_{content_hash}.png')
+        typ_path = os.path.join(temp_dir, f"abstract_{content_hash}.typ")
+        png_path = os.path.join(temp_dir, f"abstract_{content_hash}.png")
 
         try:
             # Write populated template
-            with open(typ_path, 'w') as f:
+            with open(typ_path, "w") as f:
                 f.write(content)
 
             # Compile with Typst
             result = subprocess.run(
-                ['typst', 'compile', typ_path, png_path, '--format', 'png'],
+                ["typst", "compile", typ_path, png_path, "--format", "png"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
 
             if result.returncode != 0:
                 raise Exception(f"Typst compilation failed: {result.stderr}")
 
             # Read PNG bytes
-            with open(png_path, 'rb') as f:
+            with open(png_path, "rb") as f:
                 return f.read()
 
         finally:
@@ -81,7 +102,7 @@ class ArxivBot:
     def create_post(self, title: str, link: str, description: str, authors: str):
         """Create a Bluesky post with paper details and abstract image"""
         # Shortened post text (abstract will be in image)
-        post_text = f"📈🤖 New Paper\n{title}\nBy {authors}\n"
+        post_text = f"📈🤖\n{title}\nBy {authors}\n"
 
         # Generate abstract image
         image_data = self.create_abstract_image(title, description, authors)
@@ -92,10 +113,12 @@ class ArxivBot:
         # Create embed with image
         embed = {
             "$type": "app.bsky.embed.images",
-            "images": [{
-                "alt": description,  # Full abstract as alt text for accessibility
-                "image": upload.blob
-            }]
+            "images": [
+                {
+                    "alt": description,  # Full abstract as alt text for accessibility
+                    "image": upload.blob,
+                }
+            ],
         }
 
         # Create and send post with image
