@@ -27,17 +27,18 @@ class ArxivBot:
         # Escape special Typst characters in user data
         def escape_typst(text: str) -> str:
             # Escape backslashes first, then special chars
-            text = (
+            return (
                 text.replace("\\", "\\\\")
+                .replace("<", "\\<")
+                .replace(">", "\\>")
                 .replace("$", "\\$")
                 .replace("#", "\\#")
                 .replace("[", "\\[")
                 .replace("]", "\\]")
                 .replace("{", "\\{")
                 .replace("}", "\\}")
-                .replace("`", "\\'")
+                .replace("`", "\\`")
             )
-            return text
 
         latex_pattern = re.compile(
             r"(\$\$.*?\$\$|(?<!\\)\$(?:[^$\\]|\\.)+?(?<!\\)\$|\\\[.*?\\\]|\\\(.*?\\\)|\\begin\{.*?\}.*?\\end\{.*?\})",
