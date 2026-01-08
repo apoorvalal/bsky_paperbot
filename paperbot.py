@@ -34,9 +34,10 @@ class ArxivBot:
             text = text.replace("]", "\\]")
             text = text.replace("{", "\\{")
             text = text.replace("}", "\\}")
+            text = text.replace("`", "\\'")
             return text
 
-        latex_pattern = re.compile(
+        latex_pattern = re.compile(>
             r"(\$\$.*?\$\$|(?<!\\)\$(?:[^$\\]|\\.)+?(?<!\\)\$|\\\[.*?\\\]|\\\(.*?\\\)|\\begin\{.*?\}.*?\\end\{.*?\})",
             re.DOTALL,
         )
