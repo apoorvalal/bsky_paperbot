@@ -29,6 +29,7 @@ class ArxivBot:
             # Escape backslashes first, then special chars
             return (
                 text.replace("\\", "\\\\")
+                .replace("*", "\\*")
                 .replace("<", "\\<")
                 .replace(">", "\\>")
                 .replace("$", "\\$")
