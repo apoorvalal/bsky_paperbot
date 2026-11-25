@@ -1,3 +1,5 @@
+
+
 # bsky_paperbot
 
 sourcecode for paper poster bot. Bot on bluesky that pings arxiv rss feeds and posts them on bluesky. Querier + archiver may be of independent interest.
@@ -11,10 +13,10 @@ sourcecode for paper poster bot. Bot on bluesky that pings arxiv rss feeds and p
 
 ### Abstract Image Rendering
 
-The bot uses [Typst](https://typst.app/) for professional typesetting of abstract images when available, with automatic fallback to PIL for local development.
+The bot uses [Typst](https://typst.app/) for professional typesetting of abstract images.
 
 - **GitHub Actions**: Typst is automatically installed via `typst-community/setup-typst` action
-- **Local development**: Works without Typst (PIL fallback), but installing Typst gives better quality
+- **Local development**: Typst is required to generate abstract images
   - macOS: `brew install typst`
   - Linux: Download from https://github.com/typst/typst/releases
 
